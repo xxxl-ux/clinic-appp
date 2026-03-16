@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>內視鏡 · 點擊累計系統</title>
+    <title>內視鏡 · 完整功能系統</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #f5f3ee; --surface: #ffffff; --border: #e8e4dc; --ink: #1a1814; --accent: #c9622a; --accent2: #2a7a5a; --radius: 14px; }
@@ -25,7 +25,6 @@
         .detail-box { padding: 15px; background: #faf9f6; border-top: 1px solid #eee; display: none; }
         .detail-box.open { display: block; }
         
-        /* 點擊按鈕樣式 */
         .item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .item-btn { 
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -34,7 +33,7 @@
         }
         .item-btn:active { transform: scale(0.95); background: #f0ebe4; }
         .item-btn.active { border-color: var(--accent2); background: #f0f9f6; }
-        .item-n { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .item-n { font-weight: 700; font-size: 14px; margin-bottom: 4px; text-align: center; line-height: 1.2; }
         .item-p { font-size: 11px; color: #888; }
         .qty-badge { 
             position: absolute; top: -5px; right: -5px; background: var(--accent2); 
@@ -59,7 +58,7 @@
 </div>
 
 <div class="search-container">
-    <input type="text" class="search-input" id="search" placeholder="🔍 輸入名字，查看一年紀錄與累計次數..." oninput="render()">
+    <input type="text" class="search-input" id="search" placeholder="🔍 搜尋病人一年份累計次數..." oninput="render()">
 </div>
 
 <div id="list"></div>
@@ -69,21 +68,22 @@
         <input type="text" id="newName" placeholder="姓名">
         <input type="date" id="newDate" onchange="render()">
     </div>
-    <button class="add-btn" onclick="addNew()">＋ 建立今日紀錄</button>
+    <button class="add-btn" onclick="addNew()">＋ 開始建立紀錄</button>
 </div>
 
 <script>
     const menu = [
         {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
-        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100}
+        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100},
+        {n: "胃 Cold Snare", p: 700}, {n: "腸 Cold Snare", p: 700}, {n: "腹部超音波", p: 200}
     ];
 
     document.getElementById('newDate').valueAsDate = new Date();
-    let db = JSON.parse(localStorage.getItem('EndoCounterDB')) || [];
+    let db = JSON.parse(localStorage.getItem('EndoFinalDB')) || [];
     let activeId = null;
 
     function save() {
-        localStorage.setItem('EndoCounterDB', JSON.stringify(db));
+        localStorage.setItem('EndoFinalDB', JSON.stringify(db));
         render();
     }
 
@@ -96,7 +96,6 @@
         let dTotal = 0, mTotal = 0;
         listEl.innerHTML = '';
 
-        // 金額統計
         db.forEach(p => {
             let pSum = p.items.reduce((s, q, i) => s + (q * menu[i].p), 0);
             if (p.date === focusDate) dTotal += pSum;
@@ -108,7 +107,6 @@
             : db.filter(p => p.date.startsWith(currentMonth));
 
         displayList.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(p => {
-            // 計算該病人歷史總次數
             const allRecords = db.filter(x => x.name === p.name);
             let historyText = "";
             menu.forEach((m, idx) => {
@@ -133,7 +131,7 @@
                 <div class="detail-box ${isOpen}">
                     <div class="history-list">
                         <div class="history-title">📅 歷次檢查紀錄</div>
-                        ${allRecords.map(r => `<div>${r.date}：$${r.items.reduce((s,q,i)=>s+q*menu[i].p,0)}</div>`).join('')}
+                        ${allRecords.slice(0,5).map(r => `<div>${r.date}：$${r.items.reduce((s,q,i)=>s+q*menu[i].p,0)}</div>`).join('')}
                     </div>
                     <div class="item-grid">
                         ${menu.map((m, i) => `
@@ -145,7 +143,7 @@
                         `).join('')}
                     </div>
                     <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button class="add-btn" style="background:var(--accent2); flex:1;" onclick="toggleCard(null)">完成項目</button>
+                        <button class="add-btn" style="background:var(--accent2); flex:1;" onclick="toggleCard(null)">完成並收合</button>
                         <button class="add-btn" style="background:#eee; color:#666; flex:none; width:80px;" onclick="resetItems('${p.id}')">歸零</button>
                     </div>
                     <button onclick="del('${p.id}')" style="width:100%; margin-top:10px; color:#ccc; border:none; background:none; font-size:12px;">刪除此筆</button>
@@ -183,7 +181,7 @@
     }
 
     function toggleCard(id) { activeId = activeId === id ? null : id; render(); }
-    function del(id) { if(confirm("確定刪除？")) { db = db.filter(x => x.id !== id); save(); } }
+    function del(id) { if(confirm("確定刪除此筆紀錄？")) { db = db.filter(x => x.id !== id); save(); } }
     render();
 </script>
 </body>
