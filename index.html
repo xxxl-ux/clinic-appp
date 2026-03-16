@@ -3,172 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="內視鏡記錄">
-    <title>內視鏡 · 病人記錄</title>
+    <title>內視鏡 · 點擊累計系統</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        /* 繼承你提供的所有專業 UI 樣式 */
-        :root { --bg: #f5f3ee; --surface: #ffffff; --card: #faf9f6; --border: #e8e4dc; --ink: #1a1814; --accent: #c9622a; --accent2: #2a7a5a; --radius: 14px; }
+        :root { --bg: #f5f3ee; --surface: #ffffff; --border: #e8e4dc; --ink: #1a1814; --accent: #c9622a; --accent2: #2a7a5a; --radius: 14px; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--ink); padding-bottom: 120px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--ink); padding-bottom: 250px; }
         
-        /* 數據概覽區 */
-        .summary-strip { display: grid; grid-template-columns: repeat(3,1fr); background: var(--surface); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
-        .sum-item { padding: 12px 8px; text-align: center; border-right: 1px solid var(--border); }
-        .sum-label { font-size: 10px; color: #8a8480; font-weight: 600; }
-        .sum-val { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-top: 4px; color: var(--accent2); }
+        .summary-strip { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .sum-item { padding: 12px; text-align: center; border-right: 1px solid var(--border); }
+        .sum-val { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent2); }
 
-        /* 月份導覽 */
-        .month-nav { display: flex; align-items: center; padding: 15px; background: var(--surface); margin-bottom: 10px; border-bottom: 1px solid var(--border); }
-        .nav-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; }
-        .month-label { flex: 1; text-align: center; font-family: 'Sora', sans-serif; font-weight: 700; }
+        .search-container { padding: 12px; background: #fff; border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #f9f9f9; font-size: 16px; outline: none; }
 
-        /* 病人卡片 */
-        .patient-card { background: var(--surface); margin: 10px; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .patient-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .patient-name { font-weight: 700; font-size: 16px; }
-        .patient-total { font-family: 'Sora', sans-serif; color: var(--accent2); font-weight: 700; }
-        .proc-list { display: none; padding: 10px 16px; background: var(--card); border-top: 1px solid var(--border); }
-        .proc-list.open { display: block; }
-        .proc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .patient-card { background: var(--surface); margin: 10px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .p-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .p-name { font-weight: 700; font-size: 18px; }
+        .p-history-tag { font-size: 12px; color: var(--accent); margin-top: 4px; font-weight: bold; }
         
-        /* 按鈕樣式 */
-        .cnt-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--accent); background: white; color: var(--accent); font-size: 20px; }
-        .cnt-btn:active { background: var(--accent); color: white; transform: scale(0.9); }
+        .detail-box { padding: 15px; background: #faf9f6; border-top: 1px solid #eee; display: none; }
+        .detail-box.open { display: block; }
+        
+        /* 點擊按鈕樣式 */
+        .item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .item-btn { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 15px 5px; border: 1px solid var(--border); border-radius: 10px; 
+            background: #fff; cursor: pointer; transition: 0.1s; position: relative;
+        }
+        .item-btn:active { transform: scale(0.95); background: #f0ebe4; }
+        .item-btn.active { border-color: var(--accent2); background: #f0f9f6; }
+        .item-n { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .item-p { font-size: 11px; color: #888; }
+        .qty-badge { 
+            position: absolute; top: -5px; right: -5px; background: var(--accent2); 
+            color: white; font-family: 'Sora'; font-size: 12px; width: 22px; height: 22px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
 
-        /* 底部輸入欄 */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 16px; }
-        .add-btn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 700; }
+        .history-list { margin-bottom: 15px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #eee; font-size: 13px; }
+        .history-title { font-weight: 700; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px; border-top: 2px solid var(--accent); z-index: 1000; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input { padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 16px; }
+        .add-btn { width: 100%; height: 50px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div class="summary-strip">
-    <div class="sum-item"><div class="sum-label">今日病人</div><div class="sum-val" id="sumDayCount">0</div></div>
-    <div class="sum-item"><div class="sum-label">本月累計</div><div class="sum-val" id="sumMonthCount">0</div></div>
-    <div class="sum-item"><div class="sum-label">本月總額</div><div class="sum-val" id="sumMonthCash">$0</div></div>
+    <div class="sum-item"><div style="font-size:11px;" id="dateLabel">今日累計</div><div class="sum-val" id="daySum">$0</div></div>
+    <div class="sum-item"><div style="font-size:11px;">本月累計</div><div class="sum-val" id="monthSum">$0</div></div>
 </div>
 
-<div class="month-nav">
-    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
-    <div class="month-label" id="monthDisplay">2024 / 03</div>
-    <button class="nav-btn" onclick="changeMonth(1)">›</button>
+<div class="search-container">
+    <input type="text" class="search-input" id="search" placeholder="🔍 輸入名字，查看一年紀錄與累計次數..." oninput="render()">
 </div>
 
-<div id="mainList"></div>
+<div id="list"></div>
 
 <div class="bottom-bar">
-    <input type="text" id="pInput" placeholder="輸入病人姓名...">
-    <button class="add-btn" onclick="addPatient()">新增</button>
+    <div class="input-row">
+        <input type="text" id="newName" placeholder="姓名">
+        <input type="date" id="newDate" onchange="render()">
+    </div>
+    <button class="add-btn" onclick="addNew()">＋ 建立今日紀錄</button>
 </div>
 
 <script>
-    // 檢查項目清單
     const menu = [
         {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
-        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100},
-        {n: "Cold Snare", p: 700}, {n: "超音波", p: 200}
+        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100}
     ];
 
-    let currentDate = new Date();
-    // 從 LocalStorage 載入數據，若無則為空陣列
-    let db = JSON.parse(localStorage.getItem('endoData')) || [];
+    document.getElementById('newDate').valueAsDate = new Date();
+    let db = JSON.parse(localStorage.getItem('EndoCounterDB')) || [];
+    let activeId = null;
 
-    function saveData() {
-        localStorage.setItem('endoData', JSON.stringify(db));
+    function save() {
+        localStorage.setItem('EndoCounterDB', JSON.stringify(db));
         render();
     }
 
     function render() {
-        const list = document.getElementById('mainList');
-        const mKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('monthDisplay').innerText = mKey.replace('-', ' / ');
-
-        let mCash = 0, mCount = 0, dCount = 0;
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        list.innerHTML = '';
+        const listEl = document.getElementById('list');
+        const keyword = document.getElementById('search').value.trim();
+        const focusDate = document.getElementById('newDate').value;
+        const currentMonth = focusDate.substring(0, 7);
         
-        // 過濾出當月資料
-        const filtered = db.filter(p => p.date.startsWith(mKey));
-        
-        filtered.forEach((p, idx) => {
-            let pTotal = 0;
-            p.items.forEach((q, i) => pTotal += q * menu[i].p);
-            
-            // 統計
-            mCash += pTotal;
-            mCount++;
-            if(p.date === todayStr) dCount++;
+        let dTotal = 0, mTotal = 0;
+        listEl.innerHTML = '';
 
+        // 金額統計
+        db.forEach(p => {
+            let pSum = p.items.reduce((s, q, i) => s + (q * menu[i].p), 0);
+            if (p.date === focusDate) dTotal += pSum;
+            if (p.date.startsWith(currentMonth)) mTotal += pSum;
+        });
+
+        const displayList = keyword 
+            ? db.filter(p => p.name.includes(keyword))
+            : db.filter(p => p.date.startsWith(currentMonth));
+
+        displayList.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(p => {
+            // 計算該病人歷史總次數
+            const allRecords = db.filter(x => x.name === p.name);
+            let historyText = "";
+            menu.forEach((m, idx) => {
+                const totalQty = allRecords.reduce((sum, rec) => sum + rec.items[idx], 0);
+                if(totalQty > 0) historyText += `${m.n}*${totalQty} `;
+            });
+
+            const isOpen = activeId === p.id ? 'open' : '';
             const card = document.createElement('div');
             card.className = 'patient-card';
             card.innerHTML = `
-                <div class="patient-header" onclick="toggleCard(${idx})">
+                <div class="p-header" onclick="toggleCard('${p.id}')">
                     <div>
-                        <div class="patient-name">${p.name}</div>
-                        <div style="font-size:10px; color:#999;">${p.date}</div>
+                        <div class="p-name">${p.name}</div>
+                        <div class="p-history-tag">${historyText || '新病人'}</div>
                     </div>
-                    <div class="patient-total">$${pTotal}</div>
+                    <div style="text-align:right">
+                        <div style="font-size:11px; color:#999">${p.date}</div>
+                        <div style="font-weight:700; color:var(--accent2)">$${p.items.reduce((s,q,i)=>s+q*menu[i].p, 0)}</div>
+                    </div>
                 </div>
-                <div class="proc-list" id="card-${idx}">
-                    ${menu.map((item, i) => `
-                        <div class="proc-row">
-                            <div>${item.n} <small>($${item.p})</small></div>
-                            <div style="display:flex; align-items:center; gap:12px;">
-                                <button class="cnt-btn" onclick="updateItem(${db.indexOf(p)}, ${i}, -1)">-</button>
-                                <span style="font-family:Sora; font-weight:700;">${p.items[i]}</span>
-                                <button class="cnt-btn" onclick="updateItem(${db.indexOf(p)}, ${i}, 1)">+</button>
+                <div class="detail-box ${isOpen}">
+                    <div class="history-list">
+                        <div class="history-title">📅 歷次檢查紀錄</div>
+                        ${allRecords.map(r => `<div>${r.date}：$${r.items.reduce((s,q,i)=>s+q*menu[i].p,0)}</div>`).join('')}
+                    </div>
+                    <div class="item-grid">
+                        ${menu.map((m, i) => `
+                            <div class="item-btn ${p.items[i]>0?'active':''}" onclick="chg('${p.id}', ${i}, 1)">
+                                <span class="item-n">${m.n}</span>
+                                <span class="item-p">$${m.p}</span>
+                                ${p.items[i]>0 ? `<div class="qty-badge">${p.items[i]}</div>` : ''}
                             </div>
-                        </div>
-                    `).join('')}
-                    <button onclick="delPatient(${db.indexOf(p)})" style="margin-top:10px; color:#c0392b; border:none; background:none; font-size:12px;">刪除此紀錄</button>
+                        `).join('')}
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="add-btn" style="background:var(--accent2); flex:1;" onclick="toggleCard(null)">完成項目</button>
+                        <button class="add-btn" style="background:#eee; color:#666; flex:none; width:80px;" onclick="resetItems('${p.id}')">歸零</button>
+                    </div>
+                    <button onclick="del('${p.id}')" style="width:100%; margin-top:10px; color:#ccc; border:none; background:none; font-size:12px;">刪除此筆</button>
                 </div>
             `;
-            list.appendChild(card);
+            listEl.appendChild(card);
         });
 
-        document.getElementById('sumDayCount').innerText = dCount;
-        document.getElementById('sumMonthCount').innerText = mCount;
-        document.getElementById('sumMonthCash').innerText = '$' + mCash;
+        document.getElementById('daySum').innerText = '$' + dTotal;
+        document.getElementById('monthSum').innerText = '$' + mTotal;
+        document.getElementById('dateLabel').innerText = (focusDate === new Date().toLocaleDateString('en-CA')) ? "今日累計" : focusDate + " 累計";
     }
 
-    function addPatient() {
-        const name = document.getElementById('pInput').value;
+    function addNew() {
+        const name = document.getElementById('newName').value;
+        const date = document.getElementById('newDate').value;
         if(!name) return;
-        db.unshift({
-            name: name,
-            date: new Date().toISOString().split('T')[0],
-            items: new Array(menu.length).fill(0)
-        });
-        document.getElementById('pInput').value = '';
-        saveData();
+        const newId = Date.now().toString();
+        db.unshift({ id: newId, name, date, items: new Array(menu.length).fill(0) });
+        activeId = newId;
+        document.getElementById('newName').value = '';
+        save();
     }
 
-    function updateItem(pIdx, iIdx, delta) {
-        db[pIdx].items[iIdx] = Math.max(0, db[pIdx].items[iIdx] + delta);
-        saveData();
+    function chg(pId, iIdx, val) {
+        const p = db.find(x => x.id === pId);
+        p.items[iIdx] += val;
+        save();
     }
 
-    function toggleCard(idx) {
-        document.getElementById(`card-${idx}`).classList.toggle('open');
+    function resetItems(pId) {
+        const p = db.find(x => x.id === pId);
+        p.items = new Array(menu.length).fill(0);
+        save();
     }
 
-    function changeMonth(delta) {
-        currentDate.setMonth(currentDate.getMonth() + delta);
-        render();
-    }
-
-    function delPatient(idx) {
-        if(confirm("確定刪除此病人紀錄？")) {
-            db.splice(idx, 1);
-            saveData();
-        }
-    }
-
+    function toggleCard(id) { activeId = activeId === id ? null : id; render(); }
+    function del(id) { if(confirm("確定刪除？")) { db = db.filter(x => x.id !== id); save(); } }
     render();
 </script>
 </body>
