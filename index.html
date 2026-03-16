@@ -5,129 +5,167 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>內視鏡進階系統</title>
+    <meta name="apple-mobile-web-app-title" content="內視鏡記錄">
+    <title>內視鏡 · 病人記錄</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #f5f3ee; --surface: #ffffff; --accent: #c9622a; --accent2: #2a7a5a; --ink: #1a1814; --border: #e8e4dc; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding-bottom: 100px; }
+        /* 繼承你提供的所有專業 UI 樣式 */
+        :root { --bg: #f5f3ee; --surface: #ffffff; --card: #faf9f6; --border: #e8e4dc; --ink: #1a1814; --accent: #c9622a; --accent2: #2a7a5a; --radius: 14px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--ink); padding-bottom: 120px; }
         
-        /* 數據概覽 Summary */
-        .summary-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 10; }
-        .sum-item { padding: 10px; text-align: center; border-right: 1px solid var(--border); }
-        .sum-label { font-size: 10px; color: #888; }
-        .sum-val { font-size: 18px; font-weight: bold; color: var(--accent2); }
+        /* 數據概覽區 */
+        .summary-strip { display: grid; grid-template-columns: repeat(3,1fr); background: var(--surface); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
+        .sum-item { padding: 12px 8px; text-align: center; border-right: 1px solid var(--border); }
+        .sum-label { font-size: 10px; color: #8a8480; font-weight: 600; }
+        .sum-val { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-top: 4px; color: var(--accent2); }
 
-        /* 月份切換 Nav */
-        .month-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--surface); margin-bottom: 10px; }
-        
-        /* 病人卡片 Patient Card */
-        .patient-card { background: var(--surface); margin: 10px; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-        .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .card-body { padding: 0 15px 15px; display: none; border-top: 1px solid var(--border); }
-        .card-body.open { display: block; }
-        
-        /* 計數器 Counter */
-        .proc-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--accent); background: none; color: var(--accent); font-weight: bold; transition: 0.1s; }
-        .btn-circle:active { transform: scale(0.85); background: var(--accent); color: white; }
+        /* 月份導覽 */
+        .month-nav { display: flex; align-items: center; padding: 15px; background: var(--surface); margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .nav-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; }
+        .month-label { flex: 1; text-align: center; font-family: 'Sora', sans-serif; font-weight: 700; }
 
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
-        input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
-        .add-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
+        /* 病人卡片 */
+        .patient-card { background: var(--surface); margin: 10px; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .patient-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .patient-name { font-weight: 700; font-size: 16px; }
+        .patient-total { font-family: 'Sora', sans-serif; color: var(--accent2); font-weight: 700; }
+        .proc-list { display: none; padding: 10px 16px; background: var(--card); border-top: 1px solid var(--border); }
+        .proc-list.open { display: block; }
+        .proc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        
+        /* 按鈕樣式 */
+        .cnt-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--accent); background: white; color: var(--accent); font-size: 20px; }
+        .cnt-btn:active { background: var(--accent); color: white; transform: scale(0.9); }
+
+        /* 底部輸入欄 */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 16px; }
+        .add-btn { background: var(--accent); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 700; }
     </style>
 </head>
 <body>
 
 <div class="summary-strip">
-    <div class="sum-item"><div class="sum-label">今日病人</div><div class="sum-val" id="todayCount">0</div></div>
-    <div class="sum-item"><div class="sum-label">本月累計</div><div class="sum-val" id="monthCount">0</div></div>
-    <div class="sum-item"><div class="sum-label">本月金額</div><div class="sum-val" id="monthCash">$0</div></div>
+    <div class="sum-item"><div class="sum-label">今日病人</div><div class="sum-val" id="sumDayCount">0</div></div>
+    <div class="sum-item"><div class="sum-label">本月累計</div><div class="sum-val" id="sumMonthCount">0</div></div>
+    <div class="sum-item"><div class="sum-label">本月總額</div><div class="sum-val" id="sumMonthCash">$0</div></div>
 </div>
 
 <div class="month-nav">
-    <button onclick="changeMonth(-1)">◀</button>
-    <b id="currentMonthDisplay">2024年 3月</b>
-    <button onclick="changeMonth(1)">▶</button>
+    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="monthDisplay">2024 / 03</div>
+    <button class="nav-btn" onclick="changeMonth(1)">›</button>
 </div>
 
-<div id="patientList"></div>
+<div id="mainList"></div>
 
 <div class="bottom-bar">
-    <input type="text" id="newName" placeholder="新病人姓名">
-    <button class="add-btn" onclick="addNewPatient()">新增病人</button>
+    <input type="text" id="pInput" placeholder="輸入病人姓名...">
+    <button class="add-btn" onclick="addPatient()">新增</button>
 </div>
 
 <script>
-    let patients = []; // 格式: {name: '某人', date: '2024-03-16', items: [0,0,0...]}
+    // 檢查項目清單
     const menu = [
         {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
-        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100}
+        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100},
+        {n: "Cold Snare", p: 700}, {n: "超音波", p: 200}
     ];
 
-    function render() {
-        const list = document.getElementById('patientList');
-        list.innerHTML = '';
-        let mTotal = 0, mPatients = 0, tPatients = 0;
-        const today = new Date().toISOString().split('T')[0];
+    let currentDate = new Date();
+    // 從 LocalStorage 載入數據，若無則為空陣列
+    let db = JSON.parse(localStorage.getItem('endoData')) || [];
 
-        patients.forEach((p, pIdx) => {
+    function saveData() {
+        localStorage.setItem('endoData', JSON.stringify(db));
+        render();
+    }
+
+    function render() {
+        const list = document.getElementById('mainList');
+        const mKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('monthDisplay').innerText = mKey.replace('-', ' / ');
+
+        let mCash = 0, mCount = 0, dCount = 0;
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        list.innerHTML = '';
+        
+        // 過濾出當月資料
+        const filtered = db.filter(p => p.date.startsWith(mKey));
+        
+        filtered.forEach((p, idx) => {
             let pTotal = 0;
-            p.items.forEach((qty, i) => pTotal += qty * menu[i].p);
+            p.items.forEach((q, i) => pTotal += q * menu[i].p);
             
-            // 統計邏輯
-            mTotal += pTotal;
-            mPatients++;
-            if(p.date === today) tPatients++;
+            // 統計
+            mCash += pTotal;
+            mCount++;
+            if(p.date === todayStr) dCount++;
 
             const card = document.createElement('div');
             card.className = 'patient-card';
             card.innerHTML = `
-                <div class="card-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                    <div><b>${p.name}</b> <small style="color: #888;">${p.date}</small></div>
-                    <div style="color: var(--accent2); font-weight: bold;">$${pTotal}</div>
+                <div class="patient-header" onclick="toggleCard(${idx})">
+                    <div>
+                        <div class="patient-name">${p.name}</div>
+                        <div style="font-size:10px; color:#999;">${p.date}</div>
+                    </div>
+                    <div class="patient-total">$${pTotal}</div>
                 </div>
-                <div class="card-body">
+                <div class="proc-list" id="card-${idx}">
                     ${menu.map((item, i) => `
                         <div class="proc-row">
-                            <div>${item.n} ($${item.p})</div>
-                            <div style="display:flex; gap:10px; align-items:center;">
-                                <button class="btn-circle" onclick="updateItem(${pIdx}, ${i}, -1)">-</button>
-                                <span>${p.items[i]}</span>
-                                <button class="btn-circle" onclick="updateItem(${pIdx}, ${i}, 1)">+</button>
+                            <div>${item.n} <small>($${item.p})</small></div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <button class="cnt-btn" onclick="updateItem(${db.indexOf(p)}, ${i}, -1)">-</button>
+                                <span style="font-family:Sora; font-weight:700;">${p.items[i]}</span>
+                                <button class="cnt-btn" onclick="updateItem(${db.indexOf(p)}, ${i}, 1)">+</button>
                             </div>
                         </div>
                     `).join('')}
-                    <button onclick="deletePatient(${pIdx})" style="margin-top:10px; color:red; border:none; background:none;">刪除紀錄</button>
+                    <button onclick="delPatient(${db.indexOf(p)})" style="margin-top:10px; color:#c0392b; border:none; background:none; font-size:12px;">刪除此紀錄</button>
                 </div>
             `;
             list.appendChild(card);
         });
 
-        document.getElementById('todayCount').innerText = tPatients;
-        document.getElementById('monthCount').innerText = mPatients;
-        document.getElementById('monthCash').innerText = '$' + mTotal;
+        document.getElementById('sumDayCount').innerText = dCount;
+        document.getElementById('sumMonthCount').innerText = mCount;
+        document.getElementById('sumMonthCash').innerText = '$' + mCash;
     }
 
-    function addNewPatient() {
-        const name = document.getElementById('newName').value;
-        if(!name) return alert("請輸入姓名");
-        patients.unshift({
+    function addPatient() {
+        const name = document.getElementById('pInput').value;
+        if(!name) return;
+        db.unshift({
             name: name,
             date: new Date().toISOString().split('T')[0],
             items: new Array(menu.length).fill(0)
         });
-        document.getElementById('newName').value = '';
-        render();
+        document.getElementById('pInput').value = '';
+        saveData();
     }
 
     function updateItem(pIdx, iIdx, delta) {
-        patients[pIdx].items[iIdx] = Math.max(0, patients[pIdx].items[iIdx] + delta);
+        db[pIdx].items[iIdx] = Math.max(0, db[pIdx].items[iIdx] + delta);
+        saveData();
+    }
+
+    function toggleCard(idx) {
+        document.getElementById(`card-${idx}`).classList.toggle('open');
+    }
+
+    function changeMonth(delta) {
+        currentDate.setMonth(currentDate.getMonth() + delta);
         render();
     }
 
-    function deletePatient(idx) {
-        if(confirm("確定刪除？")) {
-            patients.splice(idx, 1);
-            render();
+    function delPatient(idx) {
+        if(confirm("確定刪除此病人紀錄？")) {
+            db.splice(idx, 1);
+            saveData();
         }
     }
 
