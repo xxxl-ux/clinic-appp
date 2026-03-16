@@ -5,82 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>診所帳務系統</title>
+    <title>內視鏡記錄系統</title>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --text: #ffffff; --blue: #58a6ff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; padding-top: env(safe-area-inset-top); padding-bottom: 100px; }
-        .header { padding: 10px 0 20px; border-bottom: 1px solid #30363d; margin-bottom: 20px; }
-        h2 { margin: 0; font-size: 22px; color: var(--blue); }
-        .patient-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #30363d; background: var(--card); color: white; margin-top: 15px; box-sizing: border-box; font-size: 16px; }
-        .item-card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; }
-        .controls { display: flex; align-items: center; gap: 15px; }
-        .btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #30363d; color: white; font-size: 20px; font-weight: bold; }
-        .count { font-size: 18px; width: 25px; text-align: center; }
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #161b22; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #30363d; padding-bottom: calc(env(safe-area-inset-bottom) + 15px); }
-        .total { color: #d29922; font-size: 22px; font-weight: bold; }
-        .save-btn { background: var(--blue); color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; }
+        :root { --accent: #c9622a; --bg: #f5f3ee; --surface: #ffffff; --ink: #1a1814; --border: #e8e4dc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding: 20px; }
+        .card { background: var(--surface); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .row:last-child { border-bottom: none; }
+        .btn-group { display: flex; align-items: center; gap: 15px; }
+        .btn { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--accent); background: white; color: var(--accent); font-size: 20px; font-weight: bold; }
+        .btn:active { background: var(--accent); color: white; }
+        .total-section { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px; border-top: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; font-size: 16px; }
     </style>
 </head>
 <body>
+    <h2>🏥 內視鏡 · 病人記錄</h2>
+    <div class="card">
+        <input type="text" id="pName" placeholder="輸入病人姓名">
+    </div>
+    <div id="itemsList" style="padding-bottom: 100px;"></div>
+    <div class="total-section">
+        <strong style="font-size: 20px;">總計: $<span id="grandTotal">0</span></strong>
+        <button onclick="saveRecord()" style="background: var(--accent); color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">儲存並清空</button>
+    </div>
 
-<div class="header">
-    <h2>🏥 診所帳務系統</h2>
-    <input type="text" id="patientName" class="patient-input" placeholder="請輸入病人姓名">
-</div>
+    <script>
+        const menu = [
+            {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
+            {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "胃 Cold Snare", p: 700},
+            {n: "腸切片", p: 100}, {n: "腸 Cold Snare", p: 700}, {n: "腹部超音波", p: 200}
+        ];
+        let counts = new Array(menu.length).fill(0);
 
-<div id="itemList"></div>
-
-<div class="footer">
-    <div class="total" id="totalPrice">總計: $0</div>
-    <button class="save-btn" onclick="saveData()">儲存紀錄</button>
-</div>
-
-<script>
-    const items = [
-        {name: "胃加腸鏡", price: 1400}, {name: "胃鏡", price: 500},
-        {name: "腸鏡", price: 800}, {name: "CLO", price: 50},
-        {name: "胃切片", price: 100}, {name: "胃 Cold Snare", price: 700},
-        {name: "腸切片", price: 100}, {name: "腸 Cold Snare", price: 700},
-        {name: "腹部超音波", price: 200}
-    ].map(i => ({...i, count: 0}));
-
-    function render() {
-        let html = '';
-        let total = 0;
-        items.forEach((item, index) => {
-            total += item.price * item.count;
-            html += `
-                <div class="item-card">
-                    <div>
-                        <div style="font-size:16px">${item.name}</div>
-                        <div style="color:#8b949e; font-size:13px">$${item.price}</div>
-                    </div>
-                    <div class="controls">
-                        <button class="btn" onclick="update(${index}, -1)">-</button>
-                        <span class="count">${item.count}</span>
-                        <button class="btn" onclick="update(${index}, 1)">+</button>
-                    </div>
-                </div>`;
-        });
-        document.getElementById('itemList').innerHTML = html;
-        document.getElementById('totalPrice').innerText = `總計: $${total}`;
-    }
-
-    function update(index, change) {
-        items[index].count = Math.max(0, items[index].count + change);
-        render();
-    }
-
-    function saveData() {
-        const name = document.getElementById('patientName').value;
-        if(!name) {
-            alert("請先輸入病人姓名！");
-            return;
+        function render() {
+            let html = ''; let total = 0;
+            menu.forEach((item, i) => {
+                total += item.p * counts[i];
+                html += `<div class="card"><div class="row"><div><b>${item.n}</b><br><small>$${item.p}</small></div>
+                    <div class="btn-group">
+                        <button class="btn" onclick="update(${i},-1)">-</button>
+                        <span>${counts[i]}</span>
+                        <button class="btn" onclick="update(${i},1)">+</button>
+                    </div></div></div>`;
+            });
+            document.getElementById('itemsList').innerHTML = html;
+            document.getElementById('grandTotal').innerText = total;
         }
-        alert("病人「" + name + "」紀錄儲存成功！");
-    }
 
-    render();
-</script>
+        function update(i, delta) {
+            counts[i] = Math.max(0, counts[i] + delta);
+            render();
+        }
+
+        function saveRecord() {
+            const name = document.getElementById('pName').value;
+            if(!name) return alert("請輸入姓名");
+            alert(`儲存成功: ${name} 共 $${document.getElementById('grandTotal').innerText}`);
+            counts.fill(0); document.getElementById('pName').value = '';
+            render();
+        }
+        render();
+    </script>
 </body>
 </html>
