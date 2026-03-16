@@ -5,67 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>內視鏡記錄系統</title>
+    <title>內視鏡進階系統</title>
     <style>
-        :root { --accent: #c9622a; --bg: #f5f3ee; --surface: #ffffff; --ink: #1a1814; --border: #e8e4dc; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding: 20px; }
-        .card { background: var(--surface); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
-        .row:last-child { border-bottom: none; }
-        .btn-group { display: flex; align-items: center; gap: 15px; }
-        .btn { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--accent); background: white; color: var(--accent); font-size: 20px; font-weight: bold; }
-        .btn:active { background: var(--accent); color: white; }
-        .total-section { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px; border-top: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; font-size: 16px; }
+        :root { --bg: #f5f3ee; --surface: #ffffff; --accent: #c9622a; --accent2: #2a7a5a; --ink: #1a1814; --border: #e8e4dc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding-bottom: 100px; }
+        
+        /* 數據概覽 Summary */
+        .summary-strip { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 10; }
+        .sum-item { padding: 10px; text-align: center; border-right: 1px solid var(--border); }
+        .sum-label { font-size: 10px; color: #888; }
+        .sum-val { font-size: 18px; font-weight: bold; color: var(--accent2); }
+
+        /* 月份切換 Nav */
+        .month-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--surface); margin-bottom: 10px; }
+        
+        /* 病人卡片 Patient Card */
+        .patient-card { background: var(--surface); margin: 10px; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-body { padding: 0 15px 15px; display: none; border-top: 1px solid var(--border); }
+        .card-body.open { display: block; }
+        
+        /* 計數器 Counter */
+        .proc-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--accent); background: none; color: var(--accent); font-weight: bold; transition: 0.1s; }
+        .btn-circle:active { transform: scale(0.85); background: var(--accent); color: white; }
+
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .add-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>🏥 內視鏡 · 病人記錄</h2>
-    <div class="card">
-        <input type="text" id="pName" placeholder="輸入病人姓名">
-    </div>
-    <div id="itemsList" style="padding-bottom: 100px;"></div>
-    <div class="total-section">
-        <strong style="font-size: 20px;">總計: $<span id="grandTotal">0</span></strong>
-        <button onclick="saveRecord()" style="background: var(--accent); color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">儲存並清空</button>
-    </div>
 
-    <script>
-        const menu = [
-            {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
-            {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "胃 Cold Snare", p: 700},
-            {n: "腸切片", p: 100}, {n: "腸 Cold Snare", p: 700}, {n: "腹部超音波", p: 200}
-        ];
-        let counts = new Array(menu.length).fill(0);
+<div class="summary-strip">
+    <div class="sum-item"><div class="sum-label">今日病人</div><div class="sum-val" id="todayCount">0</div></div>
+    <div class="sum-item"><div class="sum-label">本月累計</div><div class="sum-val" id="monthCount">0</div></div>
+    <div class="sum-item"><div class="sum-label">本月金額</div><div class="sum-val" id="monthCash">$0</div></div>
+</div>
 
-        function render() {
-            let html = ''; let total = 0;
-            menu.forEach((item, i) => {
-                total += item.p * counts[i];
-                html += `<div class="card"><div class="row"><div><b>${item.n}</b><br><small>$${item.p}</small></div>
-                    <div class="btn-group">
-                        <button class="btn" onclick="update(${i},-1)">-</button>
-                        <span>${counts[i]}</span>
-                        <button class="btn" onclick="update(${i},1)">+</button>
-                    </div></div></div>`;
-            });
-            document.getElementById('itemsList').innerHTML = html;
-            document.getElementById('grandTotal').innerText = total;
-        }
+<div class="month-nav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <b id="currentMonthDisplay">2024年 3月</b>
+    <button onclick="changeMonth(1)">▶</button>
+</div>
 
-        function update(i, delta) {
-            counts[i] = Math.max(0, counts[i] + delta);
-            render();
-        }
+<div id="patientList"></div>
 
-        function saveRecord() {
-            const name = document.getElementById('pName').value;
-            if(!name) return alert("請輸入姓名");
-            alert(`儲存成功: ${name} 共 $${document.getElementById('grandTotal').innerText}`);
-            counts.fill(0); document.getElementById('pName').value = '';
-            render();
-        }
+<div class="bottom-bar">
+    <input type="text" id="newName" placeholder="新病人姓名">
+    <button class="add-btn" onclick="addNewPatient()">新增病人</button>
+</div>
+
+<script>
+    let patients = []; // 格式: {name: '某人', date: '2024-03-16', items: [0,0,0...]}
+    const menu = [
+        {n: "胃加腸鏡", p: 1400}, {n: "胃鏡", p: 500}, {n: "腸鏡", p: 800},
+        {n: "CLO", p: 50}, {n: "胃切片", p: 100}, {n: "腸切片", p: 100}
+    ];
+
+    function render() {
+        const list = document.getElementById('patientList');
+        list.innerHTML = '';
+        let mTotal = 0, mPatients = 0, tPatients = 0;
+        const today = new Date().toISOString().split('T')[0];
+
+        patients.forEach((p, pIdx) => {
+            let pTotal = 0;
+            p.items.forEach((qty, i) => pTotal += qty * menu[i].p);
+            
+            // 統計邏輯
+            mTotal += pTotal;
+            mPatients++;
+            if(p.date === today) tPatients++;
+
+            const card = document.createElement('div');
+            card.className = 'patient-card';
+            card.innerHTML = `
+                <div class="card-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                    <div><b>${p.name}</b> <small style="color: #888;">${p.date}</small></div>
+                    <div style="color: var(--accent2); font-weight: bold;">$${pTotal}</div>
+                </div>
+                <div class="card-body">
+                    ${menu.map((item, i) => `
+                        <div class="proc-row">
+                            <div>${item.n} ($${item.p})</div>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <button class="btn-circle" onclick="updateItem(${pIdx}, ${i}, -1)">-</button>
+                                <span>${p.items[i]}</span>
+                                <button class="btn-circle" onclick="updateItem(${pIdx}, ${i}, 1)">+</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <button onclick="deletePatient(${pIdx})" style="margin-top:10px; color:red; border:none; background:none;">刪除紀錄</button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        document.getElementById('todayCount').innerText = tPatients;
+        document.getElementById('monthCount').innerText = mPatients;
+        document.getElementById('monthCash').innerText = '$' + mTotal;
+    }
+
+    function addNewPatient() {
+        const name = document.getElementById('newName').value;
+        if(!name) return alert("請輸入姓名");
+        patients.unshift({
+            name: name,
+            date: new Date().toISOString().split('T')[0],
+            items: new Array(menu.length).fill(0)
+        });
+        document.getElementById('newName').value = '';
         render();
-    </script>
+    }
+
+    function updateItem(pIdx, iIdx, delta) {
+        patients[pIdx].items[iIdx] = Math.max(0, patients[pIdx].items[iIdx] + delta);
+        render();
+    }
+
+    function deletePatient(idx) {
+        if(confirm("確定刪除？")) {
+            patients.splice(idx, 1);
+            render();
+        }
+    }
+
+    render();
+</script>
 </body>
 </html>
